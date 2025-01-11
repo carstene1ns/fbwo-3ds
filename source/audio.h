@@ -1,20 +1,7 @@
 #ifndef AUDIO_H
 #define AUDIO_H
 
-#define MUSIC_CHANNEL 1
-
-#define BUFFER_SIZE 4096 //in samples
-
-#define STACKSIZE (4 * 1024)
-
-Thread threadHandle;
-Handle threadRequest;
-
-volatile bool runThread;
-u8 last_half;
-u16 last_buf_seq;
-bool music_loaded;
-Music music;
+extern Music music;
 
 u8 audio_init(const char*);
 void audio_music_load();

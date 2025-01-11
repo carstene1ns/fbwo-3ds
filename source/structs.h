@@ -83,3 +83,4 @@ OggVorbis_File* file;
 } Music;
 #endif
 
+extern Configuration cfg;

@@ -1,5 +1,8 @@
 FBWO-3DS v0.4.1
 
+v0.4.2 - 2025-01-11
+* build system and renderer overhaul
+
 Changelog:
 v0.4.1 - 2016-03-06
 * added per-level glue delay support

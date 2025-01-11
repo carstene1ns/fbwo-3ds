@@ -4,46 +4,6 @@
 #include <3ds.h>
 #include "structs.h"
 
-int level_grid[DIM_X][DIM_Y]; //24 rows (4 hidden), 10 cols
-/*
----------...--->
-|0 1 2 3 ... 9
-|1
-|2
-|3
-...
-|23
-v
-
-*/
-
-
-Tetrimino* in_play;
-Tetrimino* hold;
-Tetrimino* last_deployed;
-Tetrimino_list* next_blocks;
-
-
-u32 ticks_before_glue;
-u32 score;
-u32 gravity_frame_counter;
-u32 total_lines;
-u32 high_score;
-u32 ARE_frames;
-
-u8 back_to_back_flag;
-u8 render_line_clear;
-u8 next_counter;
-u8 level;
-u8 gameover;
-u8 hold_last; //flag to disallow infinite holding
-u8 ARE_state;
-u8 last_T_rotation;
-u8 last_T_kick;
-u8 back_to_back_flag_old;
-
-Indicator_to_render indicator;
-
 //function declaration
 void save_highscore();
 void load_highscore();
@@ -80,31 +40,39 @@ void ARE_ccw();
 void ARE_finish();
 u32 T_corners_occupied();
 
-extern Configuration cfg;
+extern int level_grid[DIM_X][DIM_Y];
+extern u8 render_line_clear;
+extern u8 level;
+extern u8 gameover;
+extern Tetrimino* last_deployed;
+extern u8 back_to_back_flag_old;
+extern u8* full_lines;
 
-u8* full_lines; //array of 24 bytes that tells if any lines are cleared
+extern u32 score;
+extern u32 high_score;
+extern u32 total_lines;
+extern u8 paused;
+extern u8 controllable;
+extern u8 back_to_back_flag;
+extern u8 mode;
+extern Indicator_to_render indicator;
 
-const int rotation_offsets[2][4][5][2];
+extern Tetrimino* in_play;
+extern Tetrimino* hold;
+
+extern u8 ARE_state;
+
+extern Tetrimino_list* next_blocks;
+
+extern const int rotation_offsets[2][4][5][2];
 
 //now compliant with The Tetris Company guidelines!
 //0-6 are all blocks except I-block, which requires 5x5 matrix, so it's in another variable.
-const int rotations[6][4][3][3];
-const int rotation_I[4][5][5];
+extern const int rotations[6][4][3][3];
+extern const int rotation_I[4][5][5];
 
 //and now ARS variants
-const int ARS_rotations[6][4][3][3];
-const int ARS_rotation_I[4][4][4];
+extern const int ARS_rotations[6][4][3][3];
+extern const int ARS_rotation_I[4][4][4];
 
 #endif // LEVEL_H
-
-
-
-
-
-
-
-
-
-
-
-
