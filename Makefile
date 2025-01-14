@@ -33,7 +33,7 @@ include $(DEVKITARM)/3ds_rules
 #---------------------------------------------------------------------------------
 TARGET		:=	fbwo
 BUILD		:=	build
-SOURCES		:=	source
+SOURCES		:=	source source/ext
 DATA		:=	data
 INCLUDES	:=	include
 GRAPHICS	:=	gfx
@@ -50,7 +50,7 @@ APP_AUTHOR	:= spaqin & carstene1ns
 ARCH	:=	-march=armv6k -mtune=mpcore -mfloat-abi=hard -mtp=soft
 
 CFLAGS	:=	-g -Wall -O2 -mword-relocations \
-			-ffunction-sections \
+			-ffunction-sections -std=c99 \
 			$(ARCH)
 
 CFLAGS	+=	$(INCLUDE) -D__3DS__
