@@ -7,6 +7,8 @@
 #include "level.h"
 #include "graphics.h"
 #include "audio.h"
+#include "config.h"
+#include "netconsole.h"
 
 Configuration cfg;
 
@@ -16,11 +18,6 @@ u8 controllable = 1; //ie. during line removal it's set to 0 so stuff won't brea
 u8 playable = 1;
 
 u8 mode = MODE_TETRIS;
-
-extern u8 level;
-extern u8 ARE_state;
-
-extern u32 high_score;
 
 //controls related variables
 u8 start_held = 0;
@@ -35,146 +32,7 @@ u32 LEFT_DAS_count;
 u32 RIGHT_DAS_speed_count = 0;
 u32 LEFT_DAS_speed_count = 0;
 
-u32 KEY_HOLD = KEY_L;
-u32 KEY_DAS = KEY_R;
-
 u8 restartpls = 0;
-u8 config_lvl = 1;
-
-char theme_template[64] = "romfs:/%s";
-
-void parse_config(FILE* config_file)
-{
-    char buffer[80];
-    char theme_folder_name[60];
-    char command[20];
-
-    int val, val2, val3, val4;
-    while(fgets(buffer, 79, config_file))
-    {
-	//              level\no.\fpd\rpd\gd
-	if(sscanf(buffer, "%20s %d %d %d %d", command, &val, &val2, &val3, &val4) == 5)
-	{
-	    if(!strcmp(command, "level\0") && val <= 20 && val > 0)
-	    {
-			dbgprintf("lvl %d: %d frms, %d rows, %d delay\n", val, val2, val3, val4);
-			cfg.frames_per_drop[val-1] = val2;
-			cfg.rows_per_drop[val-1] = val3;
-			cfg.glue_delay[val-1] = val4;
-	    }
-	}
-        else if(sscanf(buffer, "%20s %d", command, &val) == 2)
-        {
-            if(!strcmp(command, "DAS\0"))
-            {
-                dbgprintf("DAS delay = %d frames\n", val);
-                cfg.DAS = val;
-            }
-            else if(!strcmp(command, "invisimode\0"))
-            {
-                dbgprintf("invisimode: ");
-                if(val)
-                    dbgprintf("on\n");
-                else
-                    dbgprintf("off\n");
-                cfg.invisimode = val;
-            }
-            else if(!strcmp(command, "hold\0"))
-            {
-                dbgprintf("hold: ");
-                if(val)
-                    dbgprintf("on\n");
-                else
-                    dbgprintf("off\n");
-                cfg.hold = val;
-            }
-            else if(!strcmp(command, "ghost_piece\0"))
-            {
-                dbgprintf("ghost piece: ");
-                if(val)
-                    dbgprintf("on\n");
-                else
-                    dbgprintf("off\n");
-                cfg.ghost_piece = val;
-            }
-            else if(!strcmp(command, "r_hold\0"))
-            {
-                dbgprintf("Hold button: ");
-                if(val)
-		{
-		    KEY_HOLD = KEY_R;
-		    KEY_DAS = KEY_L;
-                    dbgprintf("R\n");
-		}
-                else
-                    dbgprintf("L\n");
-            }
-            else if(!strcmp(command, "ars\0"))
-            {
-                dbgprintf("Rotation system: ");
-                if(val)
-		{
-		    cfg.ARS = 1;
-                    dbgprintf("ARS\n");
-		}
-                else
-                    dbgprintf("SRS\n");
-            }
-            else if(!strcmp(command, "next_displayed\0"))
-	    {
-                if(val >= 0 && val < 7)
-                {
-                    dbgprintf("next displayed pieces no. %d\n", val);
-                    cfg.next_displayed = val;
-                }
-	    }
-
-            else if(!strcmp(command, "are_delay\0"))
-            {
-                dbgprintf("ARE delay = %d frames\n", val);
-                cfg.ARE_delay = val;
-            }
-            else if(!strcmp(command, "DAS_speed\0"))
-            {
-                dbgprintf("DAS speed = %d frames\n", val);
-                cfg.DAS_speed = val;
-            }
-            else if(!strcmp(command, "line_clear_frms\0"))
-            {
-                dbgprintf("Line clear lasts = %d frames\n", val);
-                cfg.line_clear_frames = val;
-            }
-            else if(!strcmp(command, "level\0"))
-	    {
-                if(level > 0 && level <= 20)
-                {
-                    dbgprintf("level = %d\n", val);
-                    config_lvl = val;
-                }
-	    }
-            else if(!strcmp(command, "lines_per_lvl\0"))
-	    {
-                if(val > 0)
-                {
-                    dbgprintf("lines per level = %d\n", val);
-                    cfg.lines_per_lvl = val;
-		}
-	    }
-        }
-        else if(sscanf(buffer, "%15s %60s", command, theme_folder_name) == 2)
-        {
-            if(!strcmp("theme", command))
-            {
-                dbgprintf("theme %s\n", theme_folder_name);
-                if(strcmp("default", theme_folder_name))
-                {
-                    sprintf(theme_template, "%s/%%s", theme_folder_name);
-                }
-            }
-        }
-    }
-    fclose(config_file);
-}
 
 void tetris_control(u32 kDown)
 {
@@ -232,7 +90,7 @@ void tetris_control(u32 kDown)
         }
         else
             B_held = 0;
-        if(kDown & KEY_HOLD && cfg.hold)
+        if(kDown & cfg.KEY_HOLD && cfg.hold)
         {
             if(!HOLD_held && !cfg.ARS)
             {
@@ -278,7 +136,7 @@ void tetris_control(u32 kDown)
                     {
                         go_right();
                     }
-                    if(kDown & KEY_DAS)
+                    if(kDown & cfg.KEY_DAS)
 						if(RIGHT_DAS_speed_count > (cfg.DAS_speed >> 1))
 			    			RIGHT_DAS_speed_count = 0;
 						else
@@ -288,7 +146,7 @@ void tetris_control(u32 kDown)
                 }
                 else
                 {
-                    if(kDown & KEY_DAS)
+                    if(kDown & cfg.KEY_DAS)
                         RIGHT_DAS_count--; //boost the DAS!
                     RIGHT_DAS_count--;
                 } // end RIGHT_DAS_count if
@@ -318,7 +176,7 @@ void tetris_control(u32 kDown)
                     {
                         go_left();
                     }
-                    if(kDown & KEY_DAS)
+                    if(kDown & cfg.KEY_DAS)
 						if(LEFT_DAS_speed_count > (cfg.DAS_speed >> 1))
 			    			LEFT_DAS_speed_count = 0;
 		        		else
@@ -328,7 +186,7 @@ void tetris_control(u32 kDown)
                 }
                 else
                 {
-                    if(kDown & KEY_DAS)
+                    if(kDown & cfg.KEY_DAS)
                         LEFT_DAS_count--; //boost the DAS!
                     LEFT_DAS_count--;
                 } // end LEFT_DAS_count if
@@ -341,58 +199,34 @@ void tetris_control(u32 kDown)
             LEFT_DAS_speed_count = 0;
             LEFT_pressed = 0;
         }//end LEFT if
-
-
     }
 }
 
 int main()
 {
     graphics_init();
+#ifndef NDEBUG
+    netConsoleInit();
+#endif
     romfsInit();
 
-    //init config w/ def. values
-    cfg.DAS = 11;
-    cfg.DAS_speed = 6;
-    cfg.next_displayed = 5;
-    cfg.invisimode = 0;
-    cfg.hold = 1;
-    cfg.line_clear_frames = 40;
-    cfg.lines_per_lvl = 10;
-    cfg.ARS = 0;
-    cfg.ARE_delay = 0;
-    cfg.ghost_piece = 1;
-    level = 1;
-    // level:                 1   2   3   4   5   6   7   8  9  10 11 12 13 14 15 16 17 18 19 20 
-    static const u32 fpd[] = {30, 28, 27, 24, 20, 15, 10, 8, 5, 3, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1};
-    memcpy(cfg.frames_per_drop, fpd, sizeof(u32)*20); 
-    // level:                 1  2  3  4  5  6  7  8  9  10 11 12 13 14 15 16 17  18  19  20
-    static const u32 rpd[] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 6, 8, 10, 12, 15, 20};
-    memcpy(cfg.rows_per_drop, rpd, sizeof(u32)*20); 
-
-	static const u32 gd[] = {30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30};
-	memcpy(cfg.glue_delay, gd, sizeof(u32)*20);
-
-    //load textures
-
+    // load config
+    default_config();
     printf("reading config...");
-    FILE* config = fopen("config.cfg", "r");
-    if(config != NULL) {
-        printf("\n");
-        parse_config(config);
-    }
-    else
+    if(!parse_config())
         printf("failed to read config!\ndefault values will be used.\n");
 
-    audio_init(theme_template); //some of the loading operations will be in another thread so maybe it will be a bit faster
+    RIGHT_DAS_count = LEFT_DAS_count = cfg.DAS;
 
-    if(!load_textures(theme_template))
+    audio_init(cfg.theme_name); //some of the loading operations will be in another thread so maybe it will be a bit faster
+
+    // load textures
+    default_theme();
+    if(!load_textures(cfg.theme_name))
 		goto texture_error;
-    RIGHT_DAS_count = cfg.DAS;
-    LEFT_DAS_count = cfg.DAS;
-
-    graphics_parse_config(theme_template);
-
+    if(!parse_theme(cfg.theme_name))
+        printf("failed to read theme config!\ndefault values will be used.\n");
+    apply_theme();
 
     //game init
     init:
@@ -400,7 +234,7 @@ int main()
     paused = 1;
     playable = 1;
     restartpls = 0;
-    level = config_lvl;
+    level = cfg.level;
     load_highscore();
 	gameover = 0;
 
@@ -432,7 +266,6 @@ int main()
 		break;
             case MODE_SETTINGS:
 		break;
-            
         }
     }
     if(restartpls)
@@ -454,9 +287,14 @@ int main()
 
     exit:
     save_highscore();
+    save_config();
     printf("exiting...\n");
     graphics_fini();
 	audio_fini();
     romfsExit();
+#ifndef NDEBUG
+    netConsoleExit();
+#endif
+
     return 0;
 }

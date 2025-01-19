@@ -9,6 +9,7 @@
 
 #include "structs.h"
 #include "audio.h"
+#include "config.h"
 
 #define MUSIC_CHANNEL 1
 #define BUFFER_SIZE 4096 //in samples
@@ -23,7 +24,7 @@ u16 last_buf_seq;
 bool music_loaded;
 Music music;
 
-u8 audio_init(const char* template)
+u8 audio_init(const char* theme_name)
 {
     ndspInit();
 	
@@ -32,19 +33,23 @@ u8 audio_init(const char* template)
 
 	music_loaded = false;
 
-    char buffer[80];
-    sprintf(buffer, template, "music.ogg");
+    char filename[80];
+	if(!get_theme_file(theme_name, "music.ogg", filename)) {
+		printf("music not found!\n");
+		return false;
+	}
 
 	music.file = malloc(sizeof(OggVorbis_File));
 	int result = -1;
 
-	FILE *f = fopen(buffer, "rb");
+	FILE *f = fopen(filename, "rb");
 	if(f)
 		result = ov_open(f, music.file, NULL, 0);
 	if (result < 0)
 	{
-		printf("failed to open music.ogg, code: %d\n", result);
+		printf("failed to load %s, code: %d\n", filename, result);
 		fclose(f);
+
 		return 1;
 	}
 
@@ -61,6 +66,7 @@ u8 audio_init(const char* template)
 	if(!music.first_data || !music.second_data)
 	{
 		printf("error allocating music memory\n");
+
 		return 1;
 	}
 
@@ -196,29 +202,6 @@ void audio_music_check()
 	
 }
 
-//legacy, not used anymore, but left so I can use it later if necessary
-void looped_fread(u32 bytes_to_read, u32 start_point, u32 data_size, FILE* fp, u8* buffer)
-{
-	u32 current_position = ftell(fp);
-	while(bytes_to_read)
-	{
-		if(current_position + bytes_to_read <= start_point + data_size)
-		{
-			fread(buffer, 1, bytes_to_read, fp);
-			return;
-		}
-		else //bytes_to_end < bytes_to_read
-		{
-			u32 bytes_to_end = start_point + data_size - current_position;
-			fread(buffer, 1, bytes_to_end, fp);
-			bytes_to_read -= bytes_to_end;
-			buffer += bytes_to_end;
-			fseek(fp, start_point, SEEK_SET); //set it to beginning
-		}
-	}
-
-}
-
 void looped_vorbis_read(OggVorbis_File *vf, u8* buffer, u32 length)
 {
 	int current_section;
@@ -235,4 +218,3 @@ void looped_vorbis_read(OggVorbis_File *vf, u8* buffer, u32 length)
 	}
 
 }
-

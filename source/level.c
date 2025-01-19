@@ -43,7 +43,7 @@ u8 last_T_rotation;
 u8 last_T_kick;
 u8 back_to_back_flag_old;
 
-Indicator_to_render indicator;
+Indicator_to_render indicator = NONE;
 
 //peanut variable init time
 u8 render_line_clear = 0;
@@ -457,8 +457,7 @@ int check_collision(const Tetrimino tetrimino)
 {
     int type = tetrimino.type;
     int rotation = tetrimino.rotation;
-    int posx = tetrimino.posx;
-    int posy = tetrimino.posy;
+    Point pos = tetrimino.pos;
     if(!cfg.ARS)
     { //SRS
 	    if(tetrimino.type != I_TYPE)
@@ -468,19 +467,19 @@ int check_collision(const Tetrimino tetrimino)
 		    {
 		        if(rotations[type][rotation][i][j]) //if we have something in that field...
 			{
-			    if(posx + j < 0) //and that something is too much to the left
+			    if(pos.x + j < 0) //and that something is too much to the left
 			    {
 				return 1;
 			    }
-			    if(posx + j >= DIM_X) //or it's too much to the right
+			    if(pos.x + j >= DIM_X) //or it's too much to the right
 			    {
 				return 1;
 			    }
-			    if(level_grid[posx+j][posy+i]) //or simply something is already there
+			    if(level_grid[pos.x+j][pos.y+i]) //or simply something is already there
 			    {
 				return 1;
 			    }
-			    if(posy + i >= DIM_Y) //or it's a bit too low
+			    if(pos.y + i >= DIM_Y) //or it's a bit too low
 			    {
 				return 1;
 			    }
@@ -494,19 +493,19 @@ int check_collision(const Tetrimino tetrimino)
 		    {
 		        if(rotation_I[rotation][i][j]) //so we have something here
 			{
-			    if(posx + j < 0) //and that something is too much to the left
+			    if(pos.x + j < 0) //and that something is too much to the left
 			    {
 				return 1;
 			    }
-			    if(posx + j >= DIM_X) //or it's too much to the right
+			    if(pos.x + j >= DIM_X) //or it's too much to the right
 			    {
 				return 1;
 			    }
-			    if(level_grid[posx+j][posy+i]) //or simply something is already there
+			    if(level_grid[pos.x+j][pos.y+i]) //or simply something is already there
 			    {
 				return 1;
 			    }
-			    if(posy + i >= DIM_Y) //or it's a bit too low
+			    if(pos.y + i >= DIM_Y) //or it's a bit too low
 			    {
 				return 1;
 			    }
@@ -524,19 +523,19 @@ int check_collision(const Tetrimino tetrimino)
 		    {
 		        if(ARS_rotations[type][rotation][i][j]) //if we have something in that field...
 			{
-			    if(posx + j < 0) //and that something is too much to the left
+			    if(pos.x + j < 0) //and that something is too much to the left
 			    {
 				return 1;
 			    }
-			    if(posx + j >= DIM_X) //or it's too much to the right
+			    if(pos.x + j >= DIM_X) //or it's too much to the right
 			    {
 				return 1;
 			    }
-			    if(level_grid[posx+j][posy+i]) //or simply something is already there
+			    if(level_grid[pos.x+j][pos.y+i]) //or simply something is already there
 			    {
 				return 1;
 			    }
-			    if(posy + i >= DIM_Y) //or it's a bit too low
+			    if(pos.y + i >= DIM_Y) //or it's a bit too low
 			    {
 				return 1;
 			    }
@@ -550,19 +549,19 @@ int check_collision(const Tetrimino tetrimino)
 		    {
 		        if(ARS_rotation_I[rotation][i][j]) //so we have something here
 			{
-			    if(posx + j < 0) //and that something is too much to the left
+			    if(pos.x + j < 0) //and that something is too much to the left
 			    {
 				return 1;
 			    }
-			    if(posx + j >= DIM_X) //or it's too much to the right
+			    if(pos.x + j >= DIM_X) //or it's too much to the right
 			    {
 				return 1;
 			    }
-			    if(level_grid[posx+j][posy+i]) //or simply something is already there
+			    if(level_grid[pos.x+j][pos.y+i]) //or simply something is already there
 			    {
 				return 1;
 			    }
-			    if(posy + i >= DIM_Y) //or it's a bit too low
+			    if(pos.y + i >= DIM_Y) //or it's a bit too low
 			    {
 				return 1;
 			    }
@@ -617,10 +616,10 @@ Returns if a drop was successful or not.
 u32 gravity_drop()
 {
     Tetrimino new_pos = *in_play;
-    new_pos.posy++;
+    new_pos.pos.y++;
     if(!check_collision(new_pos)) //nothing below - just go down
     {
-        in_play->posy++;
+        in_play->pos.y++;
 	last_T_rotation = 0;
 	if(!cfg.ARS || !ARS_glue_lock)
 	    ticks_before_glue = 0;
@@ -637,7 +636,7 @@ u32 gravity_drop()
 void increase_ticks()
 {
     Tetrimino new_pos = *in_play;
-    new_pos.posy++;
+    new_pos.pos.y++;
     if(check_collision(new_pos)) //means that there's something below, so we count down
     {
         ticks_before_glue++;
@@ -682,8 +681,8 @@ Tetrimino get_ghost_piece()
 {
     Tetrimino ghost_piece = *in_play;
     while(!check_collision(ghost_piece))
-        ghost_piece.posy++;
-    ghost_piece.posy--;
+        ghost_piece.pos.y++;
+    ghost_piece.pos.y--;
     return ghost_piece;
 }
 /*
@@ -696,10 +695,10 @@ int go_all_down()
     int rows = -1;
     while(!check_collision(copy))
     {
-        copy.posy++;
+        copy.pos.y++;
         rows++;
     }
-    in_play->posy = copy.posy - 1;
+    in_play->pos.y = copy.pos.y - 1;
     score += rows << 1; //2 points per tile dropped
     if(score > high_score)
 	high_score = score;
@@ -714,10 +713,10 @@ Moves the tetrimino to the left.
 void go_left()
 {
     Tetrimino copy = *in_play;
-    copy.posx--;
+    copy.pos.x--;
     if(!check_collision(copy))
     {
-        in_play->posx--;
+        in_play->pos.x--;
 	last_T_rotation = 0;
 	if(!cfg.ARS || !ARS_glue_lock)
 	    ticks_before_glue = 0;
@@ -729,10 +728,10 @@ Moves the tetrimino to the right.
 void go_right()
 {
     Tetrimino copy = *in_play;
-    copy.posx++;
+    copy.pos.x++;
     if(!check_collision(copy))
     {
-        in_play->posx++;
+        in_play->pos.x++;
 	last_T_rotation = 0;
 	if(!cfg.ARS || !ARS_glue_lock)
 	    ticks_before_glue = 0;
@@ -774,18 +773,18 @@ void apply_rotation(Tetrimino copy)
     	{
     	    u8 rot_orig = in_play->rotation;
 	    u8 rot_copy = copy.rotation;
-	    u32 new_posx, new_posy;
+	    Point new_pos;
 
             for(u8 i = 0; i < 5; i++)
 	    {
-		new_posx = in_play->posx + rotation_offsets[0][rot_orig][i][0] - rotation_offsets[0][rot_copy][i][0];
-		new_posy = in_play->posy + rotation_offsets[0][rot_orig][i][1] - rotation_offsets[0][rot_copy][i][1];
-		copy.posx = new_posx;
-		copy.posy = new_posy;
+		new_pos.x = in_play->pos.x + rotation_offsets[0][rot_orig][i][0] - rotation_offsets[0][rot_copy][i][0];
+		new_pos.y = in_play->pos.y + rotation_offsets[0][rot_orig][i][1] - rotation_offsets[0][rot_copy][i][1];
+		copy.pos.x = new_pos.x;
+		copy.pos.y = new_pos.y;
 		if(!(check_collision(copy)))
 		{
-		    in_play->posx = new_posx;
-		    in_play->posy = new_posy;
+		    in_play->pos.x = new_pos.x;
+		    in_play->pos.y = new_pos.y;
 		    in_play->rotation = rot_copy;
 
 			last_T_rotation = 1; //actually we don't check if it's T, cause we need to check that only during locking and branches are bad, my professor told me.
@@ -800,18 +799,18 @@ void apply_rotation(Tetrimino copy)
 	{
             u8 rot_orig = in_play->rotation;
             u8 rot_copy = copy.rotation;
-            u32 new_posx, new_posy;
+            Point new_pos;
 
             for(u8 i = 0; i < 5; i++)
             {
-                new_posx = in_play->posx + rotation_offsets[1][rot_orig][i][0] - rotation_offsets[1][rot_copy][i][0];
-                new_posy = in_play->posy + rotation_offsets[1][rot_orig][i][1] - rotation_offsets[1][rot_copy][i][1];
-                copy.posx = new_posx;
-                copy.posy = new_posy;
+                new_pos.x = in_play->pos.x + rotation_offsets[1][rot_orig][i][0] - rotation_offsets[1][rot_copy][i][0];
+                new_pos.y = in_play->pos.y + rotation_offsets[1][rot_orig][i][1] - rotation_offsets[1][rot_copy][i][1];
+                copy.pos.x = new_pos.x;
+                copy.pos.y = new_pos.y;
                 if(!(check_collision(copy)))
                 {
-                    in_play->posx = new_posx;
-                    in_play->posy = new_posy;
+                    in_play->pos.x = new_pos.x;
+                    in_play->pos.y = new_pos.y;
                     in_play->rotation = rot_copy;
                     ticks_before_glue = 0;
                 }
@@ -823,61 +822,61 @@ void apply_rotation(Tetrimino copy)
 	if(!check_collision(copy)) //basic test
 	{
 	    in_play->rotation = copy.rotation;
-	    in_play->posx = copy.posx;
+	    in_play->pos.x = copy.pos.x;
 	    ticks_before_glue = 0;
 	    return;
 	}
-	copy.posx++; //check right
+	copy.pos.x++; //check right
 	if(!check_collision(copy))
 	{
 	    in_play->rotation = copy.rotation;
-	    in_play->posx = copy.posx;
+	    in_play->pos.x = copy.pos.x;
 	    ticks_before_glue = 0;
 	    return;
 	}
-	copy.posx -= 2; //check left
+	copy.pos.x -= 2; //check left
 	if(!check_collision(copy))
 	{
 	    in_play->rotation = copy.rotation;
-	    in_play->posx = copy.posx;
+	    in_play->pos.x = copy.pos.x;
 	    ticks_before_glue = 0;
 	    return;
 	}
 	if(copy.type == I_TYPE)//try wallkick first (2 to the right)
 	{
-   	    copy.posx += 3;
+   	    copy.pos.x += 3;
 	    if(!check_collision(copy))
 	    {
 		in_play->rotation = copy.rotation;
-		in_play->posx = copy.posx;
+		in_play->pos.x = copy.pos.x;
 		ticks_before_glue = 0;
 		return;
 	    }
-	    copy.posx -= 2; //reset posx
+	    copy.pos.x -= 2; //reset pos.x
 	    //try if it will be a floor kick
 	    if(copy.rotation & 1)
 	    {
-        	copy.posy++;
+        	copy.pos.y++;
 		copy.rotation = 0; //it really doesn't matter if it's 0 or 2
 		if(check_collision(copy)) //first floor kick try
 		{
-		    copy.posy -= 2; //kick once
+		    copy.pos.y -= 2; //kick once
 		    copy.rotation = 1;
 		    if(!check_collision(copy))
 		    {
 			in_play->rotation = copy.rotation;
-			in_play->posx = copy.posx;
-			in_play->posy = copy.posy;
+			in_play->pos.x = copy.pos.x;
+			in_play->pos.y = copy.pos.y;
 			ARS_glue_lock = 1;
 			ticks_before_glue = cfg.glue_delay[level-1];
 			return;
 		    }
-		    copy.posy--; //kick 2 spaces up
+		    copy.pos.y--; //kick 2 spaces up
 		    if(!check_collision(copy))
 		    {
 			in_play->rotation = copy.rotation;
-			in_play->posx = copy.posx;
-			in_play->posy = copy.posy;
+			in_play->pos.x = copy.pos.x;
+			in_play->pos.y = copy.pos.y;
 			ARS_glue_lock = 1;
 			ticks_before_glue = cfg.glue_delay[level-1];
 			return;
@@ -887,12 +886,12 @@ void apply_rotation(Tetrimino copy)
 	}
 	else if (copy.type == T_TYPE && copy.rotation == 2) //try a kick up... dunno if it should be a T-spin.
 	{
-	    copy.posy--;
+	    copy.pos.y--;
 	    if(!check_collision(copy))
 	    {
 		in_play->rotation = copy.rotation;
-		in_play->posx = copy.posx;
-		in_play->posy = copy.posy;
+		in_play->pos.x = copy.pos.x;
+		in_play->pos.y = copy.pos.y;
 		ARS_glue_lock = 1;
 		ticks_before_glue = cfg.glue_delay[level-1];
 		return;
@@ -909,8 +908,7 @@ Glues the tetrimino to the playfield. Also, it sets some stuff and does basic ga
 */
 void glue()
 {
-    u32 posx = in_play->posx;
-    u32 posy = in_play->posy;
+    Point pos = in_play->pos;
     u8 type = in_play->type;
     u8 rotation = in_play->rotation;
     if(!cfg.ARS) //SRS
@@ -919,15 +917,15 @@ void glue()
             for(int i = 0; i < 3; ++i)
                 for(int j = 0; j < 3; ++j)
                 {
-		    if(posx + i >= 0 && posy+j <= DIM_Y && posx + i < DIM_X)
-                        level_grid[posx+i][posy+j] |= rotations[type][rotation][j][i];
+		    if(pos.x + i >= 0 && pos.y+j <= DIM_Y && pos.x + i < DIM_X)
+                        level_grid[pos.x+i][pos.y+j] |= rotations[type][rotation][j][i];
                 }
         else
             for(int i = 0; i < 5; ++i)
                 for(int j = 0; j < 5; ++j)
                 {
-		    if(posx + i >= 0 && posy+j <= DIM_Y && posx + i < DIM_X)
-                        level_grid[posx+i][posy+j] |= rotation_I[rotation][j][i];
+		    if(pos.x + i >= 0 && pos.y+j <= DIM_Y && pos.x + i < DIM_X)
+                        level_grid[pos.x+i][pos.y+j] |= rotation_I[rotation][j][i];
                 }
     }
     else //ARS
@@ -936,15 +934,15 @@ void glue()
             for(int i = 0; i < 3; ++i)
                 for(int j = 0; j < 3; ++j)
                 {
-		    if(posx + i >= 0 && posy+j <= DIM_Y && posx + i < DIM_X)
-                        level_grid[posx+i][posy+j] |= ARS_rotations[type][rotation][j][i];
+		    if(pos.x + i >= 0 && pos.y+j <= DIM_Y && pos.x + i < DIM_X)
+                        level_grid[pos.x+i][pos.y+j] |= ARS_rotations[type][rotation][j][i];
                 }
         else
             for(int i = 0; i < 4; ++i)
                 for(int j = 0; j < 4; ++j)
                 {
-		    if(posx + i >= 0 && posy+j <= DIM_Y && posx + i < DIM_X)
-                        level_grid[posx+i][posy+j] |= ARS_rotation_I[rotation][j][i];
+		    if(pos.x + i >= 0 && pos.y+j <= DIM_Y && pos.x + i < DIM_X)
+                        level_grid[pos.x+i][pos.y+j] |= ARS_rotation_I[rotation][j][i];
                 }
     }
     ticks_before_glue = 0;
@@ -1040,7 +1038,7 @@ void update_level()
 
 void do_gameover()
 {
-	ndspChnSetPaused(music.chnl, true);
+	audio_music_pause();
     gameover = 1;
     //clean up
     iterative_list_cleanup(next_blocks);
@@ -1072,20 +1070,20 @@ void deploy_next(bool ARE_hold_deploy)
     {
 	if(to_deploy->type != I_TYPE)
 	{
-	    to_deploy->posx = 4;
-	    to_deploy->posy = 2;
+	    to_deploy->pos.x = 4;
+	    to_deploy->pos.y = 2;
 	}
 	else
 	{
-	    to_deploy->posx = 3;
-	    to_deploy->posy = 1;
+	    to_deploy->pos.x = 3;
+	    to_deploy->pos.y = 1;
 	}
     }
     else
     {
 	ARS_glue_lock = 0;
-	to_deploy->posx = 3;
-	to_deploy->posy = 2;
+	to_deploy->pos.x = 3;
+	to_deploy->pos.y = 2;
     }
     to_deploy->rotation = 0;
     hold_last = 0;
@@ -1135,13 +1133,13 @@ void deploy_hold()
 {
     if(hold->type != I_TYPE)
     {
-	hold->posx = 4;
-	hold->posy = 2;
+	hold->pos.x = 4;
+	hold->pos.y = 2;
     }
     else
     {
-	hold->posx = 3;
-	hold->posy = 1;
+	hold->pos.x = 3;
+	hold->pos.y = 1;
     }
     hold->rotation = 0;
     in_play = hold;
@@ -1163,8 +1161,8 @@ void ARE_hold()
     }
     else
     {
-	hold->posx = 3;
-	hold->posy = 3;
+	hold->pos.x = 3;
+	hold->pos.y = 3;
 	hold->rotation = 0;
 	in_play = hold;
     }
@@ -1317,13 +1315,12 @@ Tetrimino_list* generate_bag()
 
 u32 T_corners_occupied()
 {
-    u32 posx = in_play->posx;
-    u32 posy = in_play->posy;
+    Point pos = in_play->pos;
     u32 corners_occupied = 0;
     for(u32 i = 0; i <= 2; i += 2)
 	for(u32 j = 0; j <= 2; j += 2)
 	{
-	    if(posx + j < 0 || posx + j >= DIM_X || level_grid[posx+j][posy+i] || posy + i >= DIM_Y) //the corner is too much to the left/right/something's already there/too low
+	    if(pos.x + j < 0 || pos.x + j >= DIM_X || level_grid[pos.x+j][pos.y+i] || pos.y + i >= DIM_Y) //the corner is too much to the left/right/something's already there/too low
 	    {
 		++corners_occupied;
 	    }

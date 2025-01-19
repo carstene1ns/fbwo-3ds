@@ -3,6 +3,9 @@
 
 extern Music music;
 
+#include <stdio.h>
+#include <tremor/ivorbisfile.h>
+
 u8 audio_init(const char*);
 void audio_music_load();
 void audio_music_play();
